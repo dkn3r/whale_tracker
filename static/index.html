@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ETH Whale Tracker</title>
+
+  <!-- Favicon: whale SVG -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐋</text></svg>"/>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/styles.css"/>
+
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<!-- ── LIVE TICKER ─────────────────────────────────────────── -->
+<div class="ticker-bar">
+  <span class="ticker-label">TOP 10 · LAST HOUR</span>
+  <span class="ticker-track" id="ticker-track">Loading…</span>
+</div>
+
+<div class="wrap">
+
+  <!-- ── HEADER ──────────────────────────────────────────────── -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🐋</div>
+      <div>
+        <div class="logo-text">Whale Tracker</div>
+        <div class="logo-sub">Ethereum Intelligence</div>
+      </div>
+    </div>
+    <div class="live-badge"><div class="live-dot"></div>LIVE · UPDATES EVERY 30s</div>
+  </header>
+
+  <!-- ── WHALE OF THE HOUR + STAT CARDS ──────────────────────── -->
+  <div class="wotd-row">
+    <div class="wotd-card">
+      <div class="crown">👑</div>
+      <div class="wotd-label">🏆 Largest TX — Last Hour</div>
+      <div class="wotd-addr addr-link" id="wotd-addr" data-addr="">—</div>
+      <div class="wotd-amount" id="wotd-amount">—</div>
+      <div class="wotd-meta" style="margin-top:10px">At <span id="wotd-time">—</span></div>
+      <div class="wotd-meta" style="margin-top:5px">
+        Hour total: <span id="wotd-total">—</span> Ξ across <span id="wotd-txc">—</span> txs
+      </div>
+      <button class="wotd-scan-btn" id="wotd-etherscan" data-hash="">
+        View on Etherscan ↗
+      </button>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card g">
+        <div class="stat-label">Total Whale TXs</div>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-delta">1h: <span id="stat-1h">—</span></div>
+      </div>
+      <div class="stat-card c">
+        <div class="stat-label">ETH Volume</div>
+        <div class="stat-value" id="stat-vol">—</div>
+        <div class="stat-delta">1h: <span id="stat-vol1h">—</span> Ξ</div>
+      </div>
+      <div class="stat-card p alltime-card" id="alltime-card">
+        <div class="stat-label">Largest TX Ever</div>
+        <div class="stat-value" id="stat-max">—</div>
+        <div class="stat-delta alltime-addr">
+          From: <span class="addr-link" id="alltime-addr" data-addr="">—</span>
+        </div>
+        <div class="alltime-btns">
+          <button class="alltime-btn" onclick="window._profileAlltime()">👤 Profile</button>
+          <button class="alltime-btn" onclick="window._scanAlltime()">🔗 Etherscan</button>
+        </div>
+      </div>
+      <div class="stat-card o">
+        <div class="stat-label">Active Senders</div>
+        <div class="stat-value" id="stat-senders">—</div>
+        <div class="stat-delta">Unique addresses 1h</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHART 1 — TX COUNT + ANOMALY ────────────────────────── -->
+  <div class="chart-card mb20">
+    <div class="section-head">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div class="section-title">TX Count · Last Hour (5-min)</div>
+        <div class="anomaly-badge" id="anomaly-badge" style="display:none;">
+          <div class="anomaly-dot"></div>
+          <span id="anomaly-count">0</span> spikes
+        </div>
+        <!-- Anomaly explanation popup -->
+        <div class="anomaly-info-popup" id="anomaly-info-popup">
+          <div class="aip-title">⚠ What is an anomaly?</div>
+          <div class="aip-body">
+            A 5-minute bucket is flagged as anomalous when its transaction rate
+            exceeds <b>600 transactions per hour</b> (≈ 50 per 5-min bucket)
+            for the selected amount threshold.<br/><br/>
+            This may indicate unusual on-chain activity such as a large protocol
+            event, airdrop, liquidation cascade, or coordinated fund movement.
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="toggle-btn" id="anomaly-toggle">⚠ Anomaly Detect</button>
+        <button class="anomaly-info-btn" id="anomaly-info-btn" title="What is Anomaly Detect?">?</button>
+        <div class="filter-group" id="f1">
+          <button class="pill active" data-v="100">≥ 100 Ξ</button>
+          <button class="pill" data-v="500">≥ 500 Ξ</button>
+          <button class="pill" data-v="1000">≥ 1 000 Ξ</button>
+          <button class="pill" data-v="5000">≥ 5 000 Ξ</button>
+        </div>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="chart1"></canvas></div>
+  </div>
+
+  <!-- ── CHARTS 2 & 3 ─────────────────────────────────────────── -->
+  <div class="charts-2">
+    <div class="chart-card">
+      <div class="section-head">
+        <div class="section-title">ETH Volume · Last Hour (5-min)</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button class="toggle-btn" id="price-toggle">Ξ Price</button>
+          <div class="filter-group" id="f2">
+            <button class="pill active" data-v="100">≥ 100</button>
+            <button class="pill" data-v="500">≥ 500</button>
+            <button class="pill" data-v="1000">≥ 1 000</button>
+            <button class="pill" data-v="5000">≥ 5 000</button>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart2"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="section-head">
+        <div class="section-title">TX Size Distribution</div>
+        <div style="font-size:10px;color:var(--muted);">Last 30 days · ETH buckets</div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart3"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── PRICE vs VOLUME ──────────────────────────────────────── -->
+  <div class="chart-card mb20">
+    <div class="section-head">
+      <div class="section-title">ETH Price vs Whale Volume — 30 Days</div>
+      <div style="display:flex;gap:20px;font-size:10px;align-items:center;flex-wrap:wrap;">
+        <span style="color:var(--orange);">━ ETH Price (USD)</span>
+        <span style="color:var(--purple);">━ Whale Volume (Ξ)</span>
+      </div>
+    </div>
+    <div class="chart-wrap-md"><canvas id="chart-corr"></canvas></div>
+  </div>
+
+  <!-- ── HEATMAP ──────────────────────────────────────────────── -->
+  <div class="chart-card mb20">
+    <div class="section-head">
+      <div class="section-title">Activity Heatmap — Past Year</div>
+      <div class="hm-legend">
+        <span>Less</span>
+        <div class="hm-legend-cells" id="hm-legend"></div>
+        <span>More</span>
+      </div>
+    </div>
+    <div class="heatmap-wrap">
+      <div style="display:flex;">
+        <div class="heatmap-day-labels">
+          <div style="height:14px;"></div>
+          <div class="hm-day-label">Mon</div>
+          <div class="hm-day-label">&nbsp;</div>
+          <div class="hm-day-label">Wed</div>
+          <div class="hm-day-label">&nbsp;</div>
+          <div class="hm-day-label">Fri</div>
+          <div class="hm-day-label">&nbsp;</div>
+        </div>
+        <div>
+          <div id="heatmap-months" style="display:flex;gap:3px;margin-bottom:2px;"></div>
+          <div class="heatmap-grid" id="heatmap-grid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── NETWORK GRAPH ────────────────────────────────────────── -->
+  <div class="chart-card mb20" style="position:relative;">
+    <div class="section-head">
+      <div class="section-title">Whale Address Network</div>
+      <div style="font-size:10px;color:var(--muted);">Node size = volume · Drag · Click to profile</div>
+    </div>
+    <svg id="network-svg"></svg>
+    <div class="net-tooltip" id="net-tooltip"></div>
+  </div>
+
+  <hr class="section-divider" data-label="TRANSACTIONS"/>
+
+  <!-- ── TABLE ────────────────────────────────────────────────── -->
+  <div class="table-card">
+    <div class="section-head">
+      <div>
+        <span class="section-title">Latest Transactions</span>
+        <span class="count-badge" id="tbl-count">loading…</span>
+      </div>
+      <div class="filter-group" id="f3">
+        <button class="pill active" data-v="100">≥ 100 Ξ</button>
+        <button class="pill" data-v="500">≥ 500 Ξ</button>
+        <button class="pill" data-v="1000">≥ 1 000 Ξ</button>
+        <button class="pill" data-v="5000">≥ 5 000 Ξ</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr>
+          <th>TX Hash</th><th>Amount</th><th>From</th><th>To</th><th>Block</th><th>Time (UTC)</th>
+        </tr></thead>
+        <tbody id="tx-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <hr class="section-divider" data-label="LEADERBOARD"/>
+
+  <div class="section-head" style="margin-bottom:16px;">
+    <div class="section-title">🏆 Top Senders</div>
+    <div class="filter-group" id="f4">
+      <button class="pill active" data-v="100">&ge; 100 &Xi;</button>
+      <button class="pill" data-v="500">&ge; 500 &Xi;</button>
+      <button class="pill" data-v="1000">&ge; 1 000 &Xi;</button>
+      <button class="pill" data-v="5000">&ge; 5 000 &Xi;</button>
+    </div>
+  </div>
+  <div class="leader-grid" id="leader-grid"></div>
+
+</div><!-- /wrap -->
+
+<div class="hm-tooltip" id="hm-tooltip"></div>
+
+<!-- ── ADDRESS PROFILER MODAL ───────────────────────────────── -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-addr-title">Address Profile</div>
+        <div class="modal-addr-full" id="modal-addr-full">—</div>
+      </div>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="profile-stats">
+        <div class="ps-card g"><div class="ps-label">Total TXs</div><div class="ps-value" id="p-txcount">—</div></div>
+        <div class="ps-card c"><div class="ps-label">Total Sent</div><div class="ps-value" id="p-vol">—</div></div>
+        <div class="ps-card o"><div class="ps-label">Largest TX</div><div class="ps-value" id="p-max">—</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div class="ps-date-card"><div class="ps-label">First Seen</div><div id="p-first">—</div></div>
+        <div class="ps-date-card"><div class="ps-label">Last Seen</div><div id="p-last">—</div></div>
+      </div>
+      <div class="profile-section-title">Activity — Last 14 Days</div>
+      <div class="profile-mini-chart"><canvas id="p-chart"></canvas></div>
+      <div class="profile-section-title">Recent Outgoing Transactions</div>
+      <div id="p-tx-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Load libs BEFORE the ES module so Chart / d3 globals are available -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script type="module" src="/js/main.js"></script>
+</body>
+</html>
